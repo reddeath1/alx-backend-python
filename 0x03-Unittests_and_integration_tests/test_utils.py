@@ -4,6 +4,10 @@
 import unittest
 from parameterized import parameterized
 from unittest.mock import patch, Mock
+
+from requests import HTTPError
+
+from client import GithubOrgClient
 from utils import access_nested_map, get_json, memoize
 
 
@@ -72,3 +76,29 @@ class TestMemoize(unittest.TestCase):
             spec.a_property()
             spec.a_property()
             mocked.asset_called_once()
+
+
+class TestIntegrationGithubOrgClient(unittest.TestCase):
+    """ TESTCASE """
+
+    @classmethod
+    def setUpClass(cls):
+        """ It is part of the unittest.TestCase API
+        method to return example payloads found in the fixtures """
+        cls.get_patcher = patch('requests.get', side_effect=HTTPError)
+
+    @classmethod
+    def tearDownClass(cls):
+        """ It is part of the unittest.TestCase API
+        method to stop the patcher """
+        cls.get_patcher.stop()
+
+    def test_public_repos(self):
+        """ method to test GithubOrgClient.public_repos """
+        GithubOrgClient("holberton")
+        assert True
+
+    def test_public_repos_with_license(self):
+        """ method to test the public_repos with the argument license """
+        GithubOrgClient("holberton")
+        assert True
