@@ -95,10 +95,10 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
     def test_public_repos(self):
         """ method to test GithubOrgClient.public_repos """
-        GithubOrgClient("holberton")
+        test_class = GithubOrgClient("holberton")
         assert True
 
     def test_public_repos_with_license(self):
         """ method to test the public_repos with the argument license """
-        GithubOrgClient("holberton")
+        test_class = GithubOrgClient("holberton")
         assert True
