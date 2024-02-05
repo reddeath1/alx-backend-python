@@ -62,11 +62,7 @@ class TestMemoize(unittest.TestCase):
     """ memoize unittest """
 
     def test_memoize(self):
-        """ memoize test """
-
         class TestClass:
-            """ self descriptive"""
-
             def a_method(self):
                 return 42
 
@@ -74,11 +70,21 @@ class TestMemoize(unittest.TestCase):
             def a_property(self):
                 return self.a_method()
 
-        with patch.object(TestClass, 'a_method') as mocked:
-            spec = TestClass()
-            spec.a_property()
-            spec.a_property()
-            mocked.asset_called_once()
+        """ Patching a_method so it won't actually be called """
+        with patch.object(TestClass, 'a_method') as mocked_a_method:
+            # Creating an instance of TestClass
+            test_instance = TestClass()
+
+            # Calling a_property twice
+            result_1 = test_instance.a_property()
+            result_2 = test_instance.a_property()
+
+            # Asserting that a_method was called only once
+            mocked_a_method.assert_called_once()
+
+            # Asserting that the results are correct
+            self.assertEqual(result_1, 42)
+            self.assertEqual(result_2, 42)
 
 class TestGithubOrgClient(unittest.TestCase):
     """Tests the `GithubOrgClient` class."""
