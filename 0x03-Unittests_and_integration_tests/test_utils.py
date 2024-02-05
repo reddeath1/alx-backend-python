@@ -62,7 +62,11 @@ class TestMemoize(unittest.TestCase):
     """ memoize unittest """
 
     def test_memoize(self):
+        """ memoize test """
+
         class TestClass:
+            """ self descriptive"""
+
             def a_method(self):
                 return 42
 
@@ -70,7 +74,6 @@ class TestMemoize(unittest.TestCase):
             def a_property(self):
                 return self.a_method()
 
-        """ Patching a_method so it won't actually be called """
         with patch.object(TestClass, 'a_method') as mocked_a_method:
             # Creating an instance of TestClass
             test_instance = TestClass()
