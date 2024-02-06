@@ -1,137 +1,101 @@
 #!/usr/bin/env python3
-""" Unittest Test
+"""A module for testing the utils module
 """
+
 import unittest
-from typing import Dict
+from unittest.mock import Mock, patch
+from parameterized import parameterized
 
-from parameterized import parameterized, parameterized_class
-from unittest.mock import patch, Mock, PropertyMock, MagicMock
+from typing import (
+    Dict,
+    Mapping,
+    Sequence,
+    Tuple,
+    Union,
+)
 
-from urllib.error import HTTPError
-
-from client import GithubOrgClient
-from fixtures import TEST_PAYLOAD
-from utils import access_nested_map, get_json, memoize
+from utils import (
+    access_nested_map,
+    get_json,
+    memoize,
+)
 
 
 class TestAccessNestedMap(unittest.TestCase):
-    """ nested map test function """
+    """Test case for `utils.access_nested_map` function.
+    """
 
     @parameterized.expand([
         ({"a": 1}, ("a",), 1),
         ({"a": {"b": 2}}, ("a",), {"b": 2}),
-        ({"a": {"b": 2}}, ("a", "b"), 2)
+        ({"a": {"b": 2}}, ("a", "b"), 2),
     ])
-    def test_access_nested_map(self, nested_map, path, expected):
-        """ test access nested map """
+    def test_access_nested_map(
+            self,
+            nested_map: Mapping,
+            path: Sequence,
+            expected: Union[Dict, int]
+    ) -> None:
+        """Tests `access_nexted_map`'s output
+        """
         self.assertEqual(access_nested_map(nested_map, path), expected)
 
     @parameterized.expand([
-        ({}, ("a",)),
-        ({"a": 1}, ("a", "b"))
+        ({}, ("a",), KeyError),
+        ({"a": 1}, ("a", "b"), KeyError),
     ])
-    def test_access_nested_map_exception(self, nested_map, path):
-        """ test exception"""
-        with self.assertRaises(KeyError):
+    def test_access_nested_map_exception(
+            self,
+            nested_map: Mapping,
+            path: Sequence,
+            exception: Exception,
+    ) -> None:
+        """Tests `access_nested_map`'s exception raising.
+        """
+        with self.assertRaises(exception):
             access_nested_map(nested_map, path)
 
 
 class TestGetJson(unittest.TestCase):
-    """ get json unittest """
+    """Tests the `utils.get_json` function.
+    """
 
     @parameterized.expand([
-        ("https://example.com", {"payload": True}),
-        ("https://holberton.io", {"payload": False})
+        ("http://example.com", {"payload": True}),
+        ("http://holberton.io", {"payload": False}),
     ])
-    def test_get_json(self, test_url, test_payload):
-        """ self descriptive"""
+    def test_get_json(
+            self,
+            test_url: str,
+            test_payload: Dict,
+    ) -> None:
+        """Tests get_json's output.
+        """
 
-        class Mocked(Mock):
-            """" mocked class """
+        attrs = {'json.return_value': test_payload}
 
-            def json(self):
-                """ json method mocked """
-                return test_payload
-
-        with patch('requests.get') as MockClass:
-            MockClass.return_value = Mocked()
+        with patch("requests.get", return_value=Mock(**attrs)) as req_get:
             self.assertEqual(get_json(test_url), test_payload)
+            req_get.assert_called_once_with(test_url)
 
 
 class TestMemoize(unittest.TestCase):
-    """ memoize unittest """
-
-    def test_memoize(self):
-        """ memoize test """
-
+    """Tests the memoize function."""
+    def test_memoize(self) -> None:
+        """Tests memoize's output."""
         class TestClass:
-            """ self descriptive"""
-
             def a_method(self):
                 return 42
 
             @memoize
             def a_property(self):
                 return self.a_method()
-
-        with patch.object(TestClass, 'a_method') as mocked:
-            spec = TestClass()
-            spec.a_property()
-            spec.a_property()
-            mocked.asset_called_once()
-
-class TestGithubOrgClient(unittest.TestCase):
-    @parameterized.expand([
-        ('google',),
-        ('abc',),
-    ])
-    @patch('client.GithubOrgClient.get_json', return_value={'login': 'test'})
-    def test_org(self, org_name, mocked_get_json):
-        client = GithubOrgClient(org_name)
-        self.assertEqual(client.org, {'login': 'test'})
-        mocked_get_json.assert_called_once_with('https://api.github.com/orgs/{}'.format(org_name))
-
-@parameterized_class([
-    {
-        'org_payload': TEST_PAYLOAD[0][0],
-        'repos_payload': TEST_PAYLOAD[0][1],
-        'expected_repos': TEST_PAYLOAD[0][2],
-        'apache2_repos': TEST_PAYLOAD[0][3],
-    },
-])
-class TestIntegrationGithubOrgClient(unittest.TestCase):
-    """Performs integration tests for the `GithubOrgClient` class."""
-    @classmethod
-    def setUpClass(cls) -> None:
-        """Sets up class fixtures before running tests."""
-        route_payload = {
-            'https://api.github.com/orgs/google': cls.org_payload,
-            'https://api.github.com/orgs/google/repos': cls.repos_payload,
-        }
-
-        def get_payload(url):
-            if url in route_payload:
-                return Mock(**{'json.return_value': route_payload[url]})
-            return HTTPError
-
-        cls.get_patcher = patch("requests.get", side_effect=get_payload)
-        cls.get_patcher.start()
-
-    def test_public_repos(self) -> None:
-        """Tests the `public_repos` method."""
-        self.assertEqual(
-            GithubOrgClient("google").public_repos(),
-            self.expected_repos,
-        )
-
-    def test_public_repos_with_license(self) -> None:
-        """Tests the `public_repos` method with a license."""
-        self.assertEqual(
-            GithubOrgClient("google").public_repos(license="apache-2.0"),
-            self.apache2_repos,
-        )
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        """Removes the class fixtures after running all tests."""
-        cls.get_patcher.stop()
+        with patch.object(
+                TestClass,
+                "a_method",
+                return_value=lambda: 42,
+        ) as memo_fxn:
+            test_class = TestClass()
+            self.assertEqual(test_class.a_property(), 42)
+            self.assertEqual(test_class.a_property(), 42)
+            memo_fxn.assert_called_once()
