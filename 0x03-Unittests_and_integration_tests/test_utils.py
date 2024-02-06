@@ -91,8 +91,6 @@ class TestGithubOrgClient(unittest.TestCase):
         self.assertEqual(client.org, {'login': 'test'})
         mocked_get_json.assert_called_once_with('https://api.github.com/orgs/{}'.format(org_name))
 
-
-
 @parameterized_class([
     {
         'org_payload': TEST_PAYLOAD[0][0],
